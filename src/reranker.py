@@ -70,6 +70,7 @@ if sys.platform.startswith("win"):
 
 import pandas as pd
 from dotenv import load_dotenv
+# pyrefly: ignore [missing-import]
 from groq import AsyncGroq, APIStatusError, APIConnectionError, RateLimitError
 from tqdm.asyncio import tqdm as async_tqdm
 
@@ -625,44 +626,66 @@ Respond with ONLY a valid JSON list containing exactly {num_candidates} objects,
 
 def _compress_profile(profile: str) -> str:
     """
-    Compress a rich profile to save tokens without compromising accuracy.
-    It keeps the introductory fields, Skills, Certifications, and Platform Signals intact.
-    In Career History, it keeps only the 3 most recent jobs, and truncates their descriptions to the first 60 characters.
-    This preserves the critical core context (like exact responsibilities and project verbs) while keeping token count small.
+    Super-aggressive compression of the candidate profile to minimize token count.
+    Keeps only essential data: ID, Current Role, YoE, Skills, and concise Career/Education summaries.
+    Drops long summaries, full job descriptions, and verbose signals.
     """
-    career_match = re.search(r"(Career History:.*?)(Education:.*)", profile)
-    if not career_match:
-        return profile[:2000]
-        
-    career_part = career_match.group(1)
-    rest_part = career_match.group(2)
-    intro_part = profile[:career_match.start(1)]
+    # Extract Candidate ID
+    cid_match = re.search(r"Candidate ID:\s*([^\.]+)", profile)
+    cid = cid_match.group(1).strip() if cid_match else "Unknown"
     
-    jobs = career_part.replace("Career History:", "").split("|")
-    compressed_jobs = []
+    # Extract Years of Experience
+    yoe_match = re.search(r"Years of Experience:\s*([\d\.]+)", profile)
+    yoe = yoe_match.group(1).strip().rstrip(".") if yoe_match else "0"
     
-    # Keep only the 3 most recent jobs
-    for job in jobs[:3]:
-        job = job.strip()
-        if not job:
-            continue
-        
-        # Match duration e.g. "27 months (current)." or "55 months." and separate description
-        desc_match = re.search(r"(.*?\b\d+\s*months(?:\s*\(\s*current\s*\))?\.)\s*(.*)", job, re.IGNORECASE)
-        if desc_match:
-            header = desc_match.group(1)
-            desc = desc_match.group(2)
-            if len(desc) > 60:
-                desc = desc[:60].strip() + "..."
-            compressed_jobs.append(f"{header} {desc}")
-        else:
-            if len(job) > 150:
-                compressed_jobs.append(job[:150] + "...")
+    # Extract Current Role
+    role_match = re.search(r"Current Role:\s*([^.]+)", profile)
+    role = role_match.group(1).strip() if role_match else "Not Provided"
+    
+    # Extract Skills
+    skills_match = re.search(r"Skills:\s*(.*?)\s*(?:Certifications:|Languages:|Platform Signals:|Career History:|Education:|$)", profile)
+    skills = skills_match.group(1).strip() if skills_match else "Not Provided"
+    
+    # Extract Career History (only job titles, companies, and durations)
+    career_match = re.search(r"Career History:\s*(.*?)\s*(?:Education:|Skills:|Certifications:|Languages:|Platform Signals:|$)", profile)
+    jobs_summary = []
+    if career_match:
+        jobs = career_match.group(1).split("|")
+        for job in jobs[:3]:
+            job_clean = job.strip()
+            if not job_clean:
+                continue
+            # Match up to "months" with optional "(current)" and period
+            hdr_match = re.search(r"(.*?\b\d+\s*months(?:\s*\(\s*current\s*\))?\s*\.)", job_clean, re.IGNORECASE)
+            if hdr_match:
+                jobs_summary.append(hdr_match.group(1).strip("."))
             else:
-                compressed_jobs.append(job)
-                
-    compressed_career = "Career History: " + " | ".join(compressed_jobs) + " "
-    return intro_part + compressed_career + rest_part
+                jobs_summary.append(job_clean[:80] + "...")
+    career = " | ".join(jobs_summary) if jobs_summary else "Not Provided"
+
+    # Extract Education (only degrees and institutions)
+    edu_match = re.search(r"Education:\s*(.*?)\s*(?:Skills:|Certifications:|Languages:|Platform Signals:|$)", profile)
+    edu_summary = []
+    if edu_match:
+        edus = edu_match.group(1).split("|")
+        for edu in edus:
+            edu_clean = edu.strip()
+            if not edu_clean:
+                continue
+            m_edu = re.search(r"(.*?\bfrom\s*[^,\(\)]+)", edu_clean, re.IGNORECASE)
+            if m_edu:
+                edu_summary.append(m_edu.group(1))
+            else:
+                edu_summary.append(edu_clean[:60] + "...")
+    education = " | ".join(edu_summary) if edu_summary else "Not Provided"
+
+    compressed = (
+        f"ID: {cid} | Role: {role} | YoE: {yoe} | "
+        f"Skills: {skills} | "
+        f"Career: {career} | "
+        f"Education: {education}"
+    )
+    return compressed
 
 
 def compute_graph_match(profile_text: str, must_have_skills: list[str], sg: SkillGraph) -> bool:
