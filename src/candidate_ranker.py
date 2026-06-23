@@ -48,8 +48,8 @@ BASE_DIR = Path(__file__).parent.parent
 CANDIDATES_JSONL = BASE_DIR / "data" / "candidates.jsonl"
 SCHEMA_PATH = BASE_DIR / "data" / "candidate_schema.json"
 JD_PATH = BASE_DIR / "data" / "job_description.docx"
-INDEX_PATH = BASE_DIR / "candidates_index.faiss"
-METADATA_PATH = BASE_DIR / "metadata.json"
+INDEX_PATH = BASE_DIR / "outputs" / "candidates_index.faiss"
+METADATA_PATH = BASE_DIR / "outputs" / "metadata.json"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384          # fixed for all-MiniLM-L6-v2

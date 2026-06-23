@@ -4,73 +4,88 @@ class SkillGraph:
     def __init__(self):
         self.graph = nx.Graph()
         
-        # Add edges (Skill, Category)
-        edges = [
-            ("PyTorch", "Deep Learning"),
-            ("TensorFlow", "Deep Learning"),
-            ("Keras", "Deep Learning"),
-            ("Pinecone", "Vector DB"),
-            ("Milvus", "Vector DB"),
-            ("Weaviate", "Vector DB"),
-            ("FAISS", "Vector DB"),
-            ("React", "Frontend"),
-            ("Vue", "Frontend"),
-            ("Angular", "Frontend"),
-            ("AWS", "Cloud"),
-            ("Azure", "Cloud"),
-            ("GCP", "Cloud"),
-        ]
-        self.graph.add_edges_from(edges)
+        self.categories_map = {
+            "Vector Database": [
+                "Pinecone", "Milvus", "Weaviate", "FAISS", 
+                "ChromaDB", "Qdrant", "HNSW", "Annoy"
+            ],
+            "Embeddings-based retrieval": [
+                "Pinecone", "Milvus", "Weaviate", "FAISS", 
+                "ChromaDB", "Qdrant", "HNSW", "Annoy"
+            ],
+            "Deep Learning": ["PyTorch", "TensorFlow", "Keras", "JAX"],
+            "Neural Networks": ["PyTorch", "TensorFlow", "Keras", "JAX"],
+            "Machine Learning": ["Scikit-learn", "XGBoost", "LightGBM", "Pandas", "NumPy"],
+            "LLM Orchestration": ["LangChain", "LlamaIndex", "Haystack"],
+            "Generative AI": ["GPT-4", "Claude", "Gemini", "Llama 3", "Mistral"],
+            "Cloud Infrastructure": ["AWS", "Azure", "GCP", "Kubernetes", "Docker", "Terraform"],
+        }
         
-        # Create a lowercase mapping for case-insensitive lookup
+        # Populate the bipartite graph with edges from specific tools to their category names
+        for cat, tools in self.categories_map.items():
+            for tool in tools:
+                self.graph.add_edge(tool, cat)
+        
+        # Create lowercase mappings for case-insensitive lookup
         self.nodes_lower = {str(n).lower(): n for n in self.graph.nodes()}
+        self.categories_lower = {cat.lower(): cat for cat in self.categories_map}
+        
+        self.tools_lower = {}
+        for tools in self.categories_map.values():
+            for t in tools:
+                self.tools_lower[t.lower()] = t
 
     def expand_skill(self, skill: str) -> list[str]:
         """
-        Given a skill, find related skills (siblings in the graph under the same category).
+        Given a skill, find related skills/equivalents.
+        
+        If it's a category (e.g. "Vector Database"), returns the tools in that category
+        and any synonym category names.
+        If it's a tool (e.g. "Pinecone"), returns its categories and equivalent tools in those categories.
         """
         skill_lower = skill.strip().lower()
         
-        # If the skill itself matches a node exactly (case-insensitive)
+        # Exact node match
+        actual_node = None
         if skill_lower in self.nodes_lower:
             actual_node = self.nodes_lower[skill_lower]
+        else:
+            # Fallback substring matching
+            for nl, an in self.nodes_lower.items():
+                if skill_lower in nl or nl in skill_lower:
+                    actual_node = an
+                    skill_lower = nl
+                    break
+        
+        if not actual_node:
+            return []
             
-            # Find neighbors (which are categories)
-            categories = list(self.graph.neighbors(actual_node))
-            
-            if not categories:
-                # If the node has no neighbors, or is a category itself?
-                # Actually, our graph is bipartite. Let's assume skill -> category -> skill
-                # If it's a category, neighbors are skills. Let's just return all its neighbors.
-                return list(self.graph.neighbors(actual_node))
-            
-            expanded = set()
-            for cat in categories:
-                # Get other skills in the same category
+        expanded = set()
+        
+        # Determine if it's a category node or a tool node
+        if skill_lower in self.categories_lower:
+            # Get tools in this category
+            tools = list(self.graph.neighbors(actual_node))
+            expanded.update(tools)
+            # Add sibling categories that share these tools
+            for tool in tools:
+                for cat in self.graph.neighbors(tool):
+                    expanded.add(cat)
+        elif skill_lower in self.tools_lower:
+            # Get categories this tool belongs to
+            cats = list(self.graph.neighbors(actual_node))
+            expanded.update(cats)
+            # Add all other tools in those categories
+            for cat in cats:
                 expanded.update(self.graph.neighbors(cat))
-                
-            # Remove the original skill itself
-            if actual_node in expanded:
-                expanded.remove(actual_node)
-                
-            return list(expanded)
+        else:
+            # Fallback networkx neighbors lookup
+            expanded.update(self.graph.neighbors(actual_node))
             
-        # Fallback: check if the input skill name is a substring of any node
-        for node_lower, actual_node in self.nodes_lower.items():
-            if skill_lower in node_lower or node_lower in skill_lower:
-                categories = list(self.graph.neighbors(actual_node))
-                expanded = set()
-                if not categories:
-                    expanded.update(self.graph.neighbors(actual_node))
-                else:
-                    for cat in categories:
-                        expanded.update(self.graph.neighbors(cat))
-                if actual_node in expanded:
-                    expanded.remove(actual_node)
-                if expanded:
-                    return list(expanded)
-                    
-        return []
+        if actual_node in expanded:
+            expanded.remove(actual_node)
+            
+        return sorted(list(expanded))
 
     def expand_skills(self, skills: list[str]) -> dict[str, list[str]]:
         """

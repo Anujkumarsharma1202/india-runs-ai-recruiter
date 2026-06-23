@@ -104,7 +104,7 @@ BASE_DIR = Path(__file__).parent.parent
 # Load .env from the project directory (silently ignored if file doesn't exist)
 load_dotenv(BASE_DIR / ".env")
 
-DEFAULT_MODEL = "llama-3.1-8b-instant"  # Groq's fastest model (replaces decommissioned llama3-8b-8192)
+DEFAULT_MODEL = "llama-3.3-70b-versatile"  # Groq's fastest model (replaces decommissioned llama3-8b-8192)
 
 # Other available Groq models (as of 2025):
 #   llama-3.3-70b-versatile   — highest quality, same free-tier RPM
@@ -113,8 +113,8 @@ DEFAULT_MODEL = "llama-3.1-8b-instant"  # Groq's fastest model (replaces decommi
 #   mixtral-8x7b-32768        — large context window (32K)
 
 # Groq free-tier: 6000 TPM limit on llama-3.1-8b-instant.
-# To prevent RateLimitError and token-bucket exhaustion, run sequentially.
-DEFAULT_CONCURRENCY = 1
+# Run concurrent requests to speed up the process while our retry logic handles rate limiting.
+DEFAULT_CONCURRENCY = 3
 
 # Retry config — Groq occasionally returns 503 or 429 under load.
 # With concurrency=1, we will wait for x-ratelimit-reset-tokens.
@@ -556,8 +556,10 @@ async def analyze_jd(
 # ---------------------------------------------------------------------------
 
 _SCORE_PROMPT = """\
-You are a Senior Technical Recruiter. Score the candidate profile below \
-against the hiring rubric provided.
+You are a world-class Technical Recruiter. Do not penalize candidates for terminology differences. \
+If a candidate lists a tool that is a known equivalent to a requirement (e.g., listing 'Pinecone' \
+satisfies 'Vector Database' or 'Embeddings-based retrieval'), give them FULL credit for that skill. \
+Stop being a literal keyword matcher and act as a competency judge.
 
 HIRING RUBRIC:
 {rubric_text}
@@ -567,25 +569,55 @@ CANDIDATE PROFILE:
 
 Scoring instructions:
 - Give an integer or decimal score from 0 to 10.
-- 10 = perfect match on all must-have skills, experience, and responsibilities.
-- 0  = completely unqualified for this role.
-- If the candidate lacks a must-have skill but possesses a skill listed in EXPANDED MUST-HAVE SKILLS, consider this a match for that requirement.
+- A score of 9-10 represents a perfect match in capability (e.g. they meet all must-have requirements conceptually, regardless of exact wording).
+- 0 = completely unqualified for this role.
+- If the candidate lacks a must-have skill but possesses a skill listed in EXPANDED MUST-HAVE SKILLS, consider this a match and give them FULL credit.
 - Write ONE concise sentence (max 25 words) justifying the score.
 - Respond with ONLY this JSON (no markdown, no extra text):
   {{"score": <number 0-10>, "reason": "<one sentence>", "graph_match": <boolean true/false>}}
-  Set "graph_match" to true ONLY IF you used an EXPANDED MUST-HAVE SKILL to fulfill a must-have skill requirement that the candidate otherwise lacked.
+  Set "graph_match" to true if you used an EXPANDED MUST-HAVE SKILL (or equivalent tool) to satisfy a must-have skill requirement that the candidate otherwise lacked.
+"""
+
+_SCORE_BATCH_PROMPT = """\
+You are a world-class Technical Recruiter. Score the following {num_candidates} candidate profiles \
+against the hiring rubric provided.
+
+Do not penalize candidates for terminology differences. If a candidate lists a tool that is a known \
+equivalent to a requirement (e.g., listing 'Pinecone' satisfies 'Vector Database' or 'Embeddings-based retrieval'), \
+give them FULL credit for that skill. Stop being a literal keyword matcher and act as a competency judge.
+
+HIRING RUBRIC:
+{rubric_text}
+
+CANDIDATES:
+{candidates_profiles}
+
+Scoring instructions:
+- For each candidate, give an integer or decimal score from 0 to 10.
+- A score of 9-10 represents a perfect match in capability conceptually, regardless of exact wording.
+- 0 = completely unqualified for this role.
+- If the candidate lacks a must-have skill but possesses a skill listed in EXPANDED MUST-HAVE SKILLS, consider this a match and give them FULL credit.
+- Write ONE concise sentence (max 25 words) justifying the score.
+- Set "graph_match" to true if you used an EXPANDED MUST-HAVE SKILL (or equivalent tool) to satisfy a must-have skill requirement that the candidate otherwise lacked.
+
+Respond with ONLY a valid JSON list containing exactly {num_candidates} objects, in the same order as listed above, matching this schema (no markdown, no extra text):
+[
+  {{"candidate_id": "<candidate_id_1>", "score": <number 0-10>, "reason": "<one sentence>", "graph_match": <boolean true/false>}},
+  ...
+]
 """
 
 
 def _compress_profile(profile: str) -> str:
     """
-    Compress a rich profile to save tokens.
-    It keeps the introductory fields and the Skills, Certifications, and Platform Signals intact,
-    but truncates the descriptions of individual jobs in the Career History.
+    Compress a rich profile to save tokens without compromising accuracy.
+    It keeps the introductory fields, Skills, Certifications, and Platform Signals intact.
+    In Career History, it keeps only the 3 most recent jobs, and truncates their descriptions to the first 60 characters.
+    This preserves the critical core context (like exact responsibilities and project verbs) while keeping token count small.
     """
     career_match = re.search(r"(Career History:.*?)(Education:.*)", profile)
     if not career_match:
-        return profile[:3000]
+        return profile[:2000]
         
     career_part = career_match.group(1)
     rest_part = career_match.group(2)
@@ -593,7 +625,9 @@ def _compress_profile(profile: str) -> str:
     
     jobs = career_part.replace("Career History:", "").split("|")
     compressed_jobs = []
-    for job in jobs:
+    
+    # Keep only the 3 most recent jobs
+    for job in jobs[:3]:
         job = job.strip()
         if not job:
             continue
@@ -603,17 +637,41 @@ def _compress_profile(profile: str) -> str:
         if desc_match:
             header = desc_match.group(1)
             desc = desc_match.group(2)
-            if len(desc) > 120:
-                desc = desc[:120].strip() + "..."
+            if len(desc) > 60:
+                desc = desc[:60].strip() + "..."
             compressed_jobs.append(f"{header} {desc}")
         else:
-            if len(job) > 250:
-                compressed_jobs.append(job[:250] + "...")
+            if len(job) > 150:
+                compressed_jobs.append(job[:150] + "...")
             else:
                 compressed_jobs.append(job)
                 
     compressed_career = "Career History: " + " | ".join(compressed_jobs) + " "
     return intro_part + compressed_career + rest_part
+
+
+def compute_graph_match(profile_text: str, must_have_skills: list[str], sg: SkillGraph) -> bool:
+    """
+    Ensure the graph_match boolean is set to True if any skill in the candidate's profile
+    maps to a 'Must-Have' requirement via the SkillGraph, even if the exact requirement word is missing.
+    """
+    profile_lower = profile_text.lower()
+    
+    for m in must_have_skills:
+        m_clean = m.strip()
+        m_lower = m_clean.lower()
+        
+        # Check if the exact requirement word/phrase is missing from the profile
+        pattern_must = rf"\b{re.escape(m_lower)}\b"
+        if not re.search(pattern_must, profile_lower):
+            # Get equivalents (like "Pinecone", "Milvus", etc.)
+            equivalents = sg.expand_skill(m_clean)
+            for eq in equivalents:
+                eq_lower = eq.strip().lower()
+                pattern_eq = rf"\b{re.escape(eq_lower)}\b"
+                if re.search(pattern_eq, profile_lower):
+                    return True
+    return False
 
 
 async def _score_candidate(
@@ -655,15 +713,21 @@ async def _score_candidate(
     async with semaphore:
         raw = await _groq_call(client, model, prompt)
 
+    # Programmatic graph match check
+    sg = SkillGraph()
+    prog_graph_match = compute_graph_match(candidate.rich_profile, rubric.must_have_skills, sg)
+
     score  = 0.0
     reason = "Scoring failed — could not parse LLM response."
-    graph_match = False
+    graph_match = prog_graph_match
     try:
         data   = _repair_and_parse_json(raw)
         score  = float(data.get("score", 0))
         
-        # Module 3: Parse graph_match and apply bonus
-        graph_match = bool(data.get("graph_match", False))
+        # Combine programmatic check with LLM's output
+        llm_graph_match = bool(data.get("graph_match", False))
+        graph_match = prog_graph_match or llm_graph_match
+        
         if graph_match:
             score += 0.5
             
@@ -690,6 +754,105 @@ async def _score_candidate(
 # Reranking engine
 # ---------------------------------------------------------------------------
 
+async def _score_candidate_batch(
+    candidates: list[RetrievalResult],
+    rubric:     JDRubric,
+    client:     AsyncGroq,
+    model:      str,
+    semaphore:  asyncio.Semaphore,
+) -> list[RankedCandidate]:
+    """
+    Score a batch of candidates against the JD rubric via Groq.
+    """
+    profiles_text_list = []
+    for idx, cand in enumerate(candidates, start=1):
+        compressed = _compress_profile(cand.rich_profile)
+        profiles_text_list.append(
+            f"Candidate #{idx}:\n"
+            f"Candidate ID: {cand.candidate_id}\n"
+            f"{compressed}\n"
+            f"---"
+        )
+    
+    candidates_profiles = "\n\n".join(profiles_text_list)
+    prompt = _SCORE_BATCH_PROMPT.format(
+        num_candidates=len(candidates),
+        rubric_text=rubric.to_prompt_text(),
+        candidates_profiles=candidates_profiles,
+    )
+    
+    async with semaphore:
+        raw = await _groq_call(client, model, prompt)
+        
+    ranked_results = []
+    try:
+        data = _repair_and_parse_json(raw)
+        if not isinstance(data, list):
+            if isinstance(data, dict) and "candidates" in data:
+                data = data["candidates"]
+            elif isinstance(data, dict):
+                for val in data.values():
+                    if isinstance(val, list):
+                        data = val
+                        break
+        
+        scores_map = {}
+        if isinstance(data, list):
+            for item in data:
+                cid = item.get("candidate_id")
+                if cid:
+                    scores_map[str(cid).strip()] = item
+                    
+        sg = SkillGraph()
+        for cand in candidates:
+            item = scores_map.get(cand.candidate_id)
+            if item:
+                score = float(item.get("score", 0.0))
+                reason = str(item.get("reason", "Scoring succeeded.")).strip()
+                llm_graph_match = bool(item.get("graph_match", False))
+            else:
+                score = 0.0
+                reason = "LLM missed this candidate in batch response."
+                llm_graph_match = False
+                
+            prog_graph_match = compute_graph_match(cand.rich_profile, rubric.must_have_skills, sg)
+            graph_match = prog_graph_match or llm_graph_match
+            if graph_match:
+                score += 0.5
+            score = max(0.0, min(10.0, score))
+            
+            ranked_results.append(RankedCandidate(
+                final_rank=0,
+                candidate_id=cand.candidate_id,
+                llm_score=score,
+                semantic_score=cand.similarity_score,
+                reason=reason,
+                rich_profile=cand.rich_profile,
+                graph_match=graph_match,
+            ))
+            
+    except Exception as exc:
+        logger.warning("Batch scoring parse failed: %s. Falling back to individual scoring.", exc)
+        for cand in candidates:
+            res = await _score_candidate(cand, rubric, client, model, semaphore)
+            ranked_results.append(res)
+            
+    return ranked_results
+
+
+async def _score_candidate_batch_with_delay(
+    candidates: list[RetrievalResult],
+    rubric:     JDRubric,
+    client:     AsyncGroq,
+    model:      str,
+    semaphore:  asyncio.Semaphore,
+    delay:      float,
+) -> list[RankedCandidate]:
+    if delay > 0:
+        await asyncio.sleep(delay)
+    return await _score_candidate_batch(candidates, rubric, client, model, semaphore)
+
+
 async def rerank_candidates(
     top_candidates: list[RetrievalResult],
     jd_rubric:      JDRubric,
@@ -700,8 +863,8 @@ async def rerank_candidates(
     """
     Rerank a list of pre-retrieved candidates using Groq LLM scoring.
 
-    All 50 candidate scoring calls are dispatched concurrently, bounded by
-    a semaphore to stay within Groq's RPM limit.
+    All candidate scoring calls are paced out with a delay to stay within Groq's RPM limits,
+    while running concurrently bounded by a semaphore.
 
     Parameters
     ----------
@@ -724,21 +887,30 @@ async def rerank_candidates(
     semaphore = asyncio.Semaphore(concurrency)
 
     logger.info(
-        "Reranking %d candidates via Groq '%s' (concurrency=%d)…",
+        "Reranking %d candidates via Groq '%s' in batches of 5 (concurrency=%d, paced by 1.5s)…",
         len(top_candidates), model, concurrency,
     )
     t0 = time.time()
 
-    tasks = [
-        _score_candidate(candidate, jd_rubric, client, model, semaphore)
-        for candidate in top_candidates
+    # Divide candidates into batches of 5
+    batch_size = 5
+    batches = [
+        top_candidates[i:i + batch_size]
+        for i in range(0, len(top_candidates), batch_size)
     ]
 
-    results: list[RankedCandidate] = await async_tqdm.gather(
+    tasks = [
+        _score_candidate_batch_with_delay(batch, jd_rubric, client, model, semaphore, i * 1.5)
+        for i, batch in enumerate(batches)
+    ]
+
+    batch_results = await async_tqdm.gather(
         *tasks,
-        desc="Scoring candidates",
-        unit=" candidate",
+        desc="Scoring candidate batches",
+        unit=" batch",
     )
+
+    results = [cand for batch in batch_results for cand in batch]
 
     # Primary sort: LLM score ↓, tiebreaker: semantic score ↓
     results.sort(key=lambda r: (r.llm_score, r.semantic_score), reverse=True)
