@@ -1,51 +1,51 @@
 rank,candidate_id,llm_score,semantic_score,graph_match,reason
-1,CAND_0058997,10.0,0.694341,Yes,Meets all requirements with excellent AI and database skills.
-2,CAND_0029546,9.7,0.695179,Yes,Strong AI and vector database experience.
-3,CAND_0041149,9.5,0.702863,Yes,Meets all must-have skills with Pinecone and FAISS.
-4,CAND_0029751,9.5,0.702787,Yes,Meets all must-have skills with Pinecone and Vector Search.
-5,CAND_0043052,9.5,0.702038,Yes,Meets all must-have skills with LangChain and FAISS.
-6,CAND_0068102,9.5,0.696023,Yes,"Meets all requirements with FAISS, Pinecone, and LLM experience."
-7,CAND_0029474,9.5,0.694729,Yes,Meets all requirements with strong AI and vector database skills.
-8,CAND_0013186,9.3,0.694008,Yes,Meets most requirements with Pinecone and embeddings experience.
-9,CAND_0047811,9.0,0.701293,Yes,Meets most requirements with Pinecone and FAISS experience
-10,CAND_0004005,9.0,0.695539,Yes,"Strong AI skills, with relevant experience."
-11,CAND_0061740,9.0,0.695197,Yes,Meets most requirements with vector search skills.
-12,CAND_0081576,9.0,0.694806,Yes,"Lacks Python, but strong in AI and vector databases."
-13,CAND_0055414,9.0,0.694124,Yes,Meets most requirements with Pinecone and FAISS experience.
-14,CAND_0065293,8.7,0.695619,Yes,"Meets most requirements, with strong AI background."
-15,CAND_0037006,8.5,0.701725,Yes,Meets some must-have skills with RAG and FAISS.
-16,CAND_0049310,8.5,0.701084,Yes,"Lacks Python, but has vector search and RAG experience"
-17,CAND_0018764,8.5,0.698821,Yes,Meets most requirements with FAISS and vector search skills.
-18,CAND_0086075,8.5,0.698072,Yes,Meets most requirements with Pinecone and FAISS skills.
-19,CAND_0066733,8.5,0.697682,Yes,Meets most must-have skills
-20,CAND_0076952,8.5,0.69739,Yes,Meets most must-have skills
-21,CAND_0091836,8.5,0.696719,Yes,Meets most requirements with FAISS and RAG experience.
-22,CAND_0052324,8.5,0.69492,Yes,Meets some requirements with LLM experience.
-23,CAND_0002451,8.5,0.694667,Yes,"Strong in AI, but lacks Python and some database skills."
-24,CAND_0039347,8.5,0.693961,Yes,Meets most requirements with FAISS and Pinecone experience.
-25,CAND_0060802,8.5,0.693877,Yes,Strong AI and vector database experience
-26,CAND_0070062,8.5,0.693815,Yes,Strong AI and operations experience
-27,CAND_0022794,8.3,0.695503,Yes,"Meets some requirements, with notable AI expertise."
-28,CAND_0032730,8.3,0.694088,Yes,"Lacks Python, but has vector search and Pinecone skills."
-29,CAND_0033000,8.0,0.694884,Yes,Some relevant skills but limited experience.
-30,CAND_0034053,8.0,0.694332,Yes,"Lacks some key skills, including Python and evaluation frameworks."
-31,CAND_0063177,7.7,0.69524,Yes,"Has relevant AI skills, but limited experience."
-32,CAND_0064817,7.5,0.699518,Yes,"Meets some requirements, but lacks Python and experience"
-33,CAND_0039919,7.5,0.698702,Yes,"Lacks Python, but has FAISS and vector search experience."
-34,CAND_0031652,7.5,0.698,Yes,"Meets some requirements, but lacks Python and evaluation frameworks."
-35,CAND_0081472,7.5,0.696745,Yes,Meets some must-have skills
-36,CAND_0053664,7.5,0.693826,Yes,"Relevant skills, but limited direct experience"
-37,CAND_0025633,7.0,0.699997,Yes,"Meets some requirements, but lacks Python and experience"
-38,CAND_0054948,7.0,0.695897,Yes,"Lacks experience, but has relevant AI skills."
-39,CAND_0075863,6.8,0.695123,No,Lacks key skills and experience.
-40,CAND_0009772,6.7,0.69408,Yes,"Has Milvus, but lacks most other required skills."
-41,CAND_0000987,6.5,0.698155,Yes,"Meets some requirements, but lacks Python and experience."
-42,CAND_0048526,6.5,0.697134,Yes,Partial must-have skills match
-43,CAND_0045215,6.5,0.696415,Yes,"Lacks Python, but has Pinecone and LoRA experience."
-44,CAND_0028801,6.5,0.693917,Yes,Lacks direct experience in required skills
-45,CAND_0052736,4.5,0.693766,Yes,Limited experience and required skills
-46,CAND_0067176,4.0,0.699124,No,"Lacks most requirements, but has some relevant skills"
-47,CAND_0039285,4.0,0.696058,No,Missing key skills like embeddings and vector databases.
-48,CAND_0080411,3.0,0.696047,No,Lacks most must-have skills and experience.
-49,CAND_0039566,2.0,0.701847,No,Lacks must-have skills in AI/ML.
-50,CAND_0030117,2.0,0.697706,No,Lacks must-have skills
+1,CAND_0052324,9.5,0.69492,Yes,"Possesses strong skills in AI/ML, including vector databases, embeddings-based retrieval systems, and evaluation frameworks."
+2,CAND_0049310,9.0,0.701084,Yes,"Candidate has experience with vector databases, LLMs, and embeddings-based retrieval systems, but lacks direct experience with evaluation frameworks for ranking systems."
+3,CAND_0029546,9.0,0.695179,Yes,"Possesses relevant skills in AI/ML, including vector databases and embeddings-based retrieval systems."
+4,CAND_0058997,9.0,0.694341,Yes,"Avni Saxena has strong skills in embeddings, vector search, and LLMs, and has taken courses on RAG and vector databases."
+5,CAND_0060802,9.0,0.693877,Yes,"Candidate has experience with embeddings-based retrieval systems, vector databases, and LLMs, making them a strong match."
+6,CAND_0029474,8.7,0.694729,Yes,"Anjali Mukherjee has strong skills in embeddings, vector search, and LLMs, and has taken courses on RAG and vector databases."
+7,CAND_0043052,8.5,0.702038,Yes,"Kiara Shetty has experience with vector databases and evaluation frameworks, but lacks direct experience with embeddings-based retrieval systems."
+8,CAND_0066733,8.5,0.697682,Yes,"Has experience with vector databases, embeddings, and fine-tuning LLMs, but lacks direct experience with ranking systems."
+9,CAND_0081472,8.5,0.696745,Yes,"Has experience with vector databases, embeddings, and fine-tuning LLMs, but lacks direct experience with ranking systems."
+10,CAND_0068102,8.5,0.696023,Yes,"Anjali Pillai has relevant experience and skills in HR and AI, including embeddings-based retrieval systems and vector databases."
+11,CAND_0065293,8.5,0.695619,Yes,"Advaith Mukherjee has experience with vector databases and some relevant skills, but lacks direct experience with evaluation frameworks."
+12,CAND_0013186,8.5,0.694008,Yes,"Has experience with vector databases and AI/ML concepts, but lacks direct experience in ranking systems and evaluation frameworks."
+13,CAND_0002451,8.3,0.694667,Yes,"Tanya Goyal has relevant skills in embeddings, vector search, and LLMs, but lacks direct experience in ranking systems and evaluation frameworks."
+14,CAND_0037006,8.0,0.701725,Yes,"Aisha Kapoor has experience with vector databases and some relevant skills, but lacks direct experience with evaluation frameworks."
+15,CAND_0086075,8.0,0.698072,Yes,"Anjali has relevant skills in embeddings-based retrieval systems and vector databases, and has some experience in Python, but lacks direct experience in evaluation frameworks for ranking systems."
+16,CAND_0053664,8.0,0.693826,Yes,"Candidate has experience with vector databases and LLMs, but lacks direct experience with embeddings-based retrieval systems and evaluation frameworks."
+17,CAND_0029751,7.5,0.702787,Yes,"Sunil Mukherjee has experience with vector databases and some relevant skills, but lacks direct experience with evaluation frameworks."
+18,CAND_0064817,7.5,0.699518,Yes,"Candidate has experience with LLMs, embeddings, and vector databases, but lacks direct experience with evaluation frameworks for ranking systems."
+19,CAND_0076952,7.5,0.69739,Yes,"Has experience with vector databases, embeddings, and fine-tuning LLMs, but lacks direct experience with ranking systems and evaluation frameworks."
+20,CAND_0022794,7.5,0.695503,Yes,"Ira Bose has experience with vector databases and some relevant skills, but lacks direct experience with evaluation frameworks."
+21,CAND_0070062,7.5,0.693815,Yes,"Candidate has experience with vector databases and LLMs, but lacks direct experience with embeddings-based retrieval systems and evaluation frameworks."
+22,CAND_0047811,7.0,0.701293,Yes,"Candidate has experience with vector databases and LLMs, but lacks direct experience with embeddings-based retrieval systems."
+23,CAND_0018764,7.0,0.698821,Yes,"Aanya has relevant skills in embeddings-based retrieval systems and vector databases, but lacks direct experience in evaluation frameworks for ranking systems."
+24,CAND_0091836,7.0,0.696719,Yes,"Riya Reddy has relevant experience and skills in HR and AI, but lacks direct experience in embeddings-based retrieval systems."
+25,CAND_0028801,7.0,0.693917,Yes,"Candidate has experience with vector databases and LLMs, but lacks direct experience with embeddings-based retrieval systems."
+26,CAND_0048526,6.5,0.697134,Yes,"Has experience with vector databases, embeddings, and fine-tuning LLMs, but lacks direct experience with ranking systems and evaluation frameworks."
+27,CAND_0004005,6.5,0.695539,Yes,"Suresh Tiwari has some relevant skills, but lacks direct experience with vector databases and evaluation frameworks."
+28,CAND_0033000,6.5,0.694884,Yes,"Has some relevant skills in AI/ML, but lacks direct experience and is underqualified for the role."
+29,CAND_0081576,6.5,0.694806,No,"Dev Menon has relevant skills in embeddings, vector search, and LLMs, but lacks direct experience in ranking systems and evaluation frameworks."
+30,CAND_0032730,6.5,0.694088,Yes,"Has some experience with vector databases and AI/ML concepts, but lacks direct experience in ranking systems."
+31,CAND_0039566,6.0,0.701847,No,"Anika Krishnan has some relevant skills, but lacks direct experience with vector databases and evaluation frameworks."
+32,CAND_0031652,6.0,0.698,Yes,"Aarav has some relevant skills, but lacks direct experience in embeddings-based retrieval systems and vector databases, and has limited experience in Python."
+33,CAND_0034053,5.7,0.694332,Yes,"Advik Subramanian has some relevant skills in embeddings and vector search, but lacks direct experience in ranking systems, evaluation frameworks, and LLMs."
+34,CAND_0025633,5.5,0.699997,Yes,"Candidate has experience with vector databases and LLMs, but lacks direct experience with embeddings-based retrieval systems and evaluation frameworks for ranking systems."
+35,CAND_0063177,5.5,0.69524,Yes,"Kiara Gupta has some relevant skills, but lacks direct experience with vector databases and evaluation frameworks."
+36,CAND_0039347,5.5,0.693961,Yes,"Has some experience with AI/ML concepts, but lacks direct experience in vector databases, ranking systems, and evaluation frameworks."
+37,CAND_0041149,5.0,0.702863,Yes,"Anika Desai has some relevant skills, but lacks direct experience with vector databases and evaluation frameworks."
+38,CAND_0039919,5.0,0.698702,Yes,"Yash has some relevant skills, but lacks direct experience in embeddings-based retrieval systems and vector databases, and has limited experience in Python."
+39,CAND_0054948,5.0,0.695897,Yes,"Dev Bose has some relevant skills, but lacks direct experience with vector databases and evaluation frameworks."
+40,CAND_0061740,5.0,0.695197,Yes,"Lacks direct experience in AI/ML, but has relevant skills and enthusiasm for learning."
+41,CAND_0045215,4.5,0.696415,Yes,"Anjali Joshi has some experience with AI/ML, but lacks direct experience in embeddings-based retrieval systems and vector databases."
+42,CAND_0009772,4.5,0.69408,Yes,"Has some experience with AI/ML concepts, but lacks direct experience in vector databases and ranking systems."
+43,CAND_0052736,4.5,0.693766,Yes,"Candidate lacks experience with embeddings-based retrieval systems, vector databases, and evaluation frameworks, making them underqualified."
+44,CAND_0067176,4.0,0.699124,No,"Candidate lacks direct experience with embeddings-based retrieval systems, vector databases, and evaluation frameworks for ranking systems."
+45,CAND_0000987,4.0,0.698155,Yes,"Aarohi has some relevant skills, but lacks direct experience in embeddings-based retrieval systems and vector databases, and has limited experience in Python."
+46,CAND_0030117,4.0,0.697706,No,"Lacks direct experience with embeddings-based retrieval systems and vector databases, but has some AI/ML knowledge."
+47,CAND_0039285,4.0,0.696058,No,"Vikram Pillai has some experience with AI/ML, but lacks direct experience in embeddings-based retrieval systems and vector databases."
+48,CAND_0055414,2.5,0.694124,Yes,"Lacks direct experience in AI/ML and vector databases, despite taking online courses."
+49,CAND_0080411,2.0,0.696047,No,"Arjun Trivedi lacks direct experience in embeddings-based retrieval systems, vector databases, and Python."
+50,CAND_0075863,2.0,0.695123,No,"Lacks relevant experience and skills in AI/ML, and is significantly underqualified for the role."

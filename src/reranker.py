@@ -392,6 +392,21 @@ async def _groq_call(
 
         except RateLimitError as exc:
             last_exc = exc
+            err_msg = str(exc).lower()
+            
+            # Check if this is a daily limit (TPD/RPD) error
+            is_daily_limit = "tokens per day" in err_msg or "tpd" in err_msg or "requests per day" in err_msg or "rpd" in err_msg
+            
+            if is_daily_limit and model != "llama-3.1-8b-instant":
+                fallback_model = "llama-3.1-8b-instant"
+                logger.warning(
+                    "Daily Token/Request Limit (TPD/RPD) reached for model '%s'. "
+                    "Automatically falling back to '%s' to continue pipeline without interruption.",
+                    model, fallback_model
+                )
+                model = fallback_model
+                continue
+
             parsed_wait = _parse_tpm_retry_after(exc)
             # Add a small buffer of 1.5s to ensure the rate limit window has fully cleared
             wait = (parsed_wait + 1.5) if parsed_wait is not None else backoff
